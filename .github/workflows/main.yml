@@ -1,0 +1,49 @@
+name: Deploy Angular App to GitHub Pages
+
+on:
+  # Executa em pushes direcionados à branch main
+  push:
+    branches: [ main ]
+
+  # Permite deploy manual a partir da aba Actions
+  workflow_dispatch:
+
+# Permissões para deploy e execução do workflow
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.12.0  # Usando a versão especificada do Node.js
+
+      - name: Instalar dependências (npm ou yarn)
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            yarn install
+          fi
+      - name: Instalar Angular CLI
+        run: npm install -g @angular/cli@15.2.10
+
+      - name: Build da aplicação Angular
+        run: ng build --output-path=production --base-href /deploy-site-control/
+
+      - name: Deploy para GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GH_PATH }}
+          publish_dir: production
